@@ -1,4 +1,7 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
+import 'package:math_expressions/math_expressions.dart';
 
 void main() {
   runApp(const Calculator());
@@ -11,7 +14,7 @@ class Calculator extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Calculator https://www.youtube.com/watch?v=l4bLPfS1uik&t=128s&ab_channel=AtifNaseem',
+      title: 'Calculator',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: SimpleCalculator(),
     );
@@ -26,6 +29,103 @@ class SimpleCalculator extends StatefulWidget {
 }
 
 class _SimpleCalculatorState extends State<SimpleCalculator> {
+  String equation = "0";
+  String result = "0";
+  String expression = "";
+  double equationFontSize = 38.0;
+  double resultFontSize = 48.0;
+  List excludedChars = ['×', '÷', '.'];
+  List colorScheme = [
+    Colors.black54,
+    Colors.white,
+    Colors.black87,
+    Colors.grey
+  ];
+  bool newEquasion = false;
+  bool _isOn = true;
+
+  toggle() {
+    setState(() => _isOn = !_isOn);
+    print(_isOn);
+  }
+
+  buttonPressed(String buttonText) {
+    setState(() {
+      print(newEquasion);
+      if (buttonText == "C") {
+        newEquasion = false;
+        equation = "0";
+        result = "0";
+        equationFontSize = 38.0;
+        resultFontSize = 48.0;
+      } else if (buttonText == "⌫") {
+        newEquasion = false;
+        equationFontSize = 48.0;
+        resultFontSize = 38.0;
+        equation = equation.substring(0, equation.length - 1);
+        if (equation == "") {
+          equation = "0";
+        }
+      } else if (buttonText == "=") {
+        newEquasion = true;
+        equationFontSize = 38.0;
+        resultFontSize = 48.0;
+
+        String tempResult = "";
+
+        for (int i = 0; i < equation.length - 1; i++) {
+          if (excludedChars.contains(equation[i]) &&
+              equation[i] == equation[i + 1]) {
+            print('${i}:duplicatefound');
+            tempResult += equation[i];
+            i++;
+          } else {
+            tempResult += equation[i];
+          }
+          ;
+        }
+        tempResult += equation[equation.length - 1];
+        equation = tempResult;
+        print(tempResult);
+
+        if (excludedChars.contains(equation[equation.length - 1])) {
+          equation = equation.substring(0, equation.length - 1);
+        }
+        expression = equation;
+        expression = expression.replaceAll('×', "*");
+        expression = expression.replaceAll('÷', "/");
+
+        try {
+          Parser p = Parser();
+
+          Expression exp = p.parse(expression);
+          ContextModel cm = ContextModel();
+          result = '${exp.evaluate(EvaluationType.REAL, cm)}';
+
+          if (result[result.length - 1] == '0' &&
+              result[result.length - 2] == '.') {
+            result = result.substring(0, result.length - 2);
+          }
+        } catch (e) {
+          result = "Error";
+        }
+      } else {
+        equationFontSize = 48.0;
+        resultFontSize = 38.0;
+        if (equation == "0") {
+          equation = buttonText;
+          // logic for handling adding more to completed equation
+        } else if (newEquasion == true && result != 'Error') {
+          equation = result;
+          newEquasion = false;
+          equation = equation + buttonText;
+        } else {
+          equation = equation + buttonText;
+        }
+      }
+    });
+  }
+
   Widget buildButton(
       String buttonText, double buttonHeight, Color buttonColor) {
     return Container(
@@ -36,9 +136,11 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(0.0),
                   side: BorderSide(
-                      color: Colors.white, width: 1, style: BorderStyle.solid)),
+                      color: _isOn ? colorScheme[1] : colorScheme[3],
+                      width: 1,
+                      style: BorderStyle.solid)),
               padding: EdgeInsets.all(16.0)),
-          onPressed: null,
+          onPressed: () => buttonPressed(buttonText),
           child: Text(
             buttonText,
             style: TextStyle(
@@ -52,33 +154,46 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('Simple Calculator')),
+      backgroundColor: _isOn ? colorScheme[1] : colorScheme[3],
+        appBar: AppBar(
+          title: Text(
+            'Simple Calculator',
+          ),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.add_alert),
+              tooltip: 'Show Snackbar',
+              onPressed: () => toggle(),
+            ),
+          ],
+        ),
         body: Column(
+          
           children: <Widget>[
             Container(
                 alignment: Alignment.centerRight,
                 padding: EdgeInsets.fromLTRB(10, 20, 10, 0),
                 child: Text(
-                  '0',
-                  style: TextStyle(fontSize: 38.0),
+                  equation,
+                  style: TextStyle(fontSize: equationFontSize),
                 )),
             Container(
                 alignment: Alignment.centerRight,
                 padding: EdgeInsets.fromLTRB(10, 30, 10, 0),
                 child: Text(
-                  '0',
-                  style: TextStyle(fontSize: 48.0),
+                  result,
+                  style: TextStyle(fontSize: resultFontSize),
                 )),
             Expanded(child: Divider()),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * .75,
                   child: Table(
                     children: [
                       TableRow(children: [
-                        buildButton('c', 1, Colors.redAccent),
+                        buildButton('C', 1, Colors.redAccent),
                         buildButton('⌫', 1, Colors.blue),
                         buildButton('÷', 1, Colors.blue),
                       ]),
@@ -105,7 +220,7 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.25,
                   child: Table(
                     children: [
