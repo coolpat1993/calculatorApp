@@ -34,7 +34,7 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
   String expression = "";
   double equationFontSize = 38.0;
   double resultFontSize = 48.0;
-  List excludedChars = ['×', '÷', '.'];
+  List excludedChars = ['×', '÷', '.', '-', '+'];
   List colorScheme = [
     Colors.black54,
     Colors.white,
@@ -115,6 +115,12 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
         if (equation == "0") {
           equation = buttonText;
           // logic for handling adding more to completed equation
+        } else if ((newEquasion == true &&
+            result != 'Error' &&
+            !excludedChars.contains(buttonText))) {
+          equation = '';
+          equation = equation + buttonText;
+          newEquasion = false;
         } else if (newEquasion == true && result != 'Error') {
           equation = result;
           newEquasion = false;
@@ -154,7 +160,7 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _isOn ? colorScheme[1] : colorScheme[3],
+        backgroundColor: _isOn ? colorScheme[1] : colorScheme[3],
         appBar: AppBar(
           title: Text(
             'Simple Calculator',
@@ -168,7 +174,6 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
           ],
         ),
         body: Column(
-          
           children: <Widget>[
             Container(
                 alignment: Alignment.centerRight,
