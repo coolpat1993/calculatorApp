@@ -34,15 +34,39 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
   String expression = "";
   double equationFontSize = 38.0;
   double resultFontSize = 48.0;
-  List excludedChars = ['×', '÷', '.', '-', '+'];
+  static const List<String> excludedChars = ['×', '÷', '.', '-', '+'];
   List colorScheme = [
     Colors.black54,
     Colors.white,
     Colors.black87,
-    Colors.grey
+    Color.fromARGB(248, 38, 38, 38),
+    Color.fromARGB(255, 19, 25, 83),
   ];
+
+/*
+List<Map<String, dynamic>> colorScheme = [
+    {
+      "primaryColor": Colors.black54,
+      "secondaryColor": Colors.white,
+      "textColor": Colors.black87,
+      "backgroundColor": Color.fromARGB(248, 38, 38, 38),
+      "buttonColor": Color.fromARGB(255, 19, 25, 83)
+    },
+    {
+      "primaryColor": Colors.white,
+      "secondaryColor": Colors.black87,
+      "textColor": Colors.white,
+      "backgroundColor": Color.fromARGB(248, 38, 38, 38),
+      "buttonColor": Color.fromARGB(255, 19, 25, 83)
+    },
+  ];
+  */
+
   bool newEquasion = false;
   bool _isOn = true;
+
+  final Parser _parser = Parser();
+  final ContextModel _contextModel = ContextModel();
 
   toggle() {
     setState(() => _isOn = !_isOn);
@@ -71,22 +95,18 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
         equationFontSize = 38.0;
         resultFontSize = 48.0;
 
-        String tempResult = "";
-
+        StringBuffer tempResult = StringBuffer();
         for (int i = 0; i < equation.length - 1; i++) {
           if (excludedChars.contains(equation[i]) &&
               equation[i] == equation[i + 1]) {
-            print('${i}:duplicatefound');
-            tempResult += equation[i];
+            tempResult.write(equation[i]);
             i++;
           } else {
-            tempResult += equation[i];
+            tempResult.write(equation[i]);
           }
-          ;
         }
-        tempResult += equation[equation.length - 1];
-        equation = tempResult;
-        print(tempResult);
+        tempResult.write(equation[equation.length - 1]);
+        equation = tempResult.toString();
 
         if (excludedChars.contains(equation[equation.length - 1])) {
           equation = equation.substring(0, equation.length - 1);
@@ -96,11 +116,8 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
         expression = expression.replaceAll('÷', "/");
 
         try {
-          Parser p = Parser();
-
-          Expression exp = p.parse(expression);
-          ContextModel cm = ContextModel();
-          result = '${exp.evaluate(EvaluationType.REAL, cm)}';
+          Expression exp = _parser.parse(expression);
+          result = '${exp.evaluate(EvaluationType.REAL, _contextModel)}';
 
           if (result[result.length - 1] == '0' &&
               result[result.length - 2] == '.') {
@@ -167,7 +184,9 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
           ),
           actions: <Widget>[
             IconButton(
-              icon: const Icon(Icons.add_alert),
+              icon: _isOn
+                  ? Icon(Icons.bedtime_rounded)
+                  : Icon(Icons.bedtime_outlined),
               tooltip: 'Show Snackbar',
               onPressed: () => toggle(),
             ),
@@ -180,14 +199,18 @@ class _SimpleCalculatorState extends State<SimpleCalculator> {
                 padding: EdgeInsets.fromLTRB(10, 20, 10, 0),
                 child: Text(
                   equation,
-                  style: TextStyle(fontSize: equationFontSize),
+                  style: TextStyle(
+                      fontSize: equationFontSize,
+                      color: _isOn ? Colors.black : Colors.white),
                 )),
             Container(
                 alignment: Alignment.centerRight,
                 padding: EdgeInsets.fromLTRB(10, 30, 10, 0),
                 child: Text(
                   result,
-                  style: TextStyle(fontSize: resultFontSize),
+                  style: TextStyle(
+                      fontSize: resultFontSize,
+                      color: _isOn ? Colors.black : Colors.white),
                 )),
             Expanded(child: Divider()),
             Row(
